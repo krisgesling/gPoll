@@ -38,7 +38,14 @@ module.exports = function (app, passport) {
 
 	app.route('/api/:id')
 		.get(isLoggedIn, function (req, res) {
-			res.json(req.user.github);
+			if (req.user.github.id) {
+				res.json(req.user.github);
+			} else if (req.user.google.id) {
+				res.json(req.user.google);
+			} else if (req.user.facebook.id) {
+				res.json(req.user.facebook);
+			}
+			
 		});
 
 	app.route('/auth/github')
@@ -49,6 +56,26 @@ module.exports = function (app, passport) {
 			successRedirect: '/',
 			failureRedirect: '/login'
 		}));
+	
+	app.get('/auth/facebook',
+	  passport.authenticate('facebook', { scope: ['public_profile', 'email'] }));
+	
+	app.get('/auth/facebook/callback',
+	  passport.authenticate('facebook', { failureRedirect: '/login' }),
+	  function(req, res) {
+	    // Successful authentication, redirect home.
+	    res.redirect('/');
+	  });
+	  
+	app.get('/auth/google',
+	  passport.authenticate('google', { scope: ['https://www.googleapis.com/auth/plus.login', 'https://www.googleapis.com/auth/userinfo.profile'] }));
+	
+	app.get('/auth/google/callback', 
+	  passport.authenticate('google', { failureRedirect: '/login' }),
+	  function(req, res) {
+	    // Successful authentication, redirect home.
+	    res.redirect('/');
+	  });
 
 	app.route('/api/:id/clicks')
 		.get(isLoggedIn, clickHandler.getClicks)
